@@ -44,9 +44,11 @@ def generate():
         return jsonify({"error": "Internal server error", "details": str(e)}), 500
 
 def generate_game_response(data):
+    goals = memory.get("goals", ["make the game a better version of itself"])  # fallback if missing
+
     prompt = f"""
 Game Data: {json.dumps(data, indent=2)}
-Goals: {memory['goals']}
+Goals: {goals}
 How can we improve the game structure or content? Provide specific changes to the game logic, maps, or balance.
 """
     print("[AI PROMPT]:", prompt)
