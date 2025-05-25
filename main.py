@@ -89,19 +89,19 @@ def call_ai_model(prompt):
             raise Exception("OpenAI API key not set")
 
         response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",  # Use this if unsure about GPT-4 access
-    messages=[
-        {"role": "system", "content": "You are an AI managing a game."},
-        {"role": "user", "content": prompt}
-    ]
-)
-
-        return response.choices[0].message.content
+            model="gpt-3.5-turbo",  # changed from gpt-4 to gpt-3.5-turbo
+            messages=[
+                {"role": "system", "content": "You are an AI managing a game."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response["choices"][0]["message"]["content"]
     except Exception as e:
         import traceback
         print("[AI ERROR]:", str(e))
         print(traceback.format_exc())
         return "AI failed to respond properly"
+
 
 @app.route("/self_improve", methods=["POST"])
 def self_improve():
