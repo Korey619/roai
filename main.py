@@ -6,6 +6,14 @@ import openai  # Make sure it's installed and working
 
 app = Flask(__name__)
 
+# Load OpenAI API key from Render secret file at /etc/secrets/openai_api_key.txt
+try:
+    with open("/etc/secrets/openai_api_key.txt", "r") as f:
+        openai.api_key = f.read().strip()
+except FileNotFoundError:
+    print("WARNING: OpenAI API key file not found at /etc/secrets/openai_api_key.txt")
+    openai.api_key = os.getenv("OPENAI_API_KEY")  # fallback if env var is set
+
 # Load persistent memory of the game state
 if os.path.exists("game_memory.json"):
     with open("game_memory.json", "r") as f:
@@ -21,7 +29,6 @@ else:
 @app.route("/generate", methods=["POST"])
 def generate():
     try:
-        # Make sure memory has 'goals' and 'history' keys before proceeding
         if "goals" not in memory:
             memory["goals"] = ["make the game a better version of itself"]
         if "history" not in memory:
@@ -33,7 +40,6 @@ def generate():
 
         memory["history"].append({"event": "generate_request", "data": data})
         
-        # Save memory back to file
         with open("game_memory.json", "w") as f:
             json.dump(memory, f, indent=2)
 
@@ -50,7 +56,7 @@ def generate():
         return jsonify({"error": "Internal server error", "details": str(e)}), 500
 
 def generate_game_response(data):
-    goals = memory.get("goals", ["make the game a better version of itself"])  # fallback if missing
+    goals = memory.get("goals", ["make the game a better version of itself"])
 
     prompt = f"""
 Game Data: {json.dumps(data, indent=2)}
@@ -75,9 +81,8 @@ How can we improve the game structure or content? Provide specific changes to th
 
 def call_ai_model(prompt):
     try:
-        openai.api_key = os.getenv("OPENAI_API_KEY")
         if not openai.api_key:
-            raise Exception("OPENAI_API_KEY not set")
+            raise Exception("OpenAI API key not set")
 
         response = openai.ChatCompletion.create(
             model="gpt-4",
