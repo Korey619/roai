@@ -53,19 +53,27 @@ Goals: {goals}
 How can we improve the game structure or content? Provide specific changes to the game logic, maps, or balance.
 """
     print("[AI PROMPT]:", prompt)
+
     ai_output = call_ai_model(prompt)
 
     if "MODIFY_SELF" in ai_output:
         print("[SELF-EDIT TRIGGERED]")
         self_editor.modify_main(ai_output)
 
-    return {
-        "SpawnBoss": {
+    if ai_output == "AI failed to respond properly":
+        # No boss spawn if AI call failed
+        spawn_boss = None
+    else:
+        spawn_boss = {
             "Name": "DemonBoss",
             "Position": {"X": 0, "Y": 10, "Z": 0}
-        },
+        }
+
+    return {
+        "SpawnBoss": spawn_boss,
         "RawAIResponse": ai_output
     }
+
 
 def call_ai_model(prompt):
     try:
