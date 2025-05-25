@@ -1,19 +1,28 @@
 from flask import Flask, request, jsonify
-import random
 
 app = Flask(__name__)
 
-@app.route("/build", methods=["POST"])
-def build_game():
+@app.route('/process', methods=['POST'])
+def process():
     data = request.get_json()
+    print("Received from Roblox:", data)
 
-    # Decide what to build — you can make this dynamic or AI-based
-    enemy = random.choice(data["enemies"])
-    boss = random.choice(data["bosses"])
-    chunk = random.choice(data["chunks"])
+    # Example: respond with map-building instructions
+    response = {
+        "Actions": [
+            {
+                "Type": "PlaceModel",
+                "Folder": "MapParts",
+                "Model": "StoneWall",
+                "Position": [0, 0, 0]
+            },
+            {
+                "Type": "PlaceModel",
+                "Folder": "EnemyModels",
+                "Model": "Skeleton",
+                "Position": [10, 0, -20]
+            }
+        ]
+    }
 
-    return jsonify({
-        "spawn_enemy": enemy,
-        "spawn_boss": boss,
-        "build_chunk": chunk
-    })
+    return jsonify(response)
