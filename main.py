@@ -1,53 +1,40 @@
 from flask import Flask, request, jsonify
 import json
 import os
-import self_editor
 import openai
+import self_editor
 
 app = Flask(__name__)
 
-# Load OpenAI API key from Render secret file or environment variable
-def load_api_key():
-    secret_path = "/etc/secrets/openai_api_key.txt"
-    if os.path.exists(secret_path):
-        with open(secret_path, "r") as f:
-            return f.read().strip()
-    return os.getenv("OPENAI_API_KEY")
+# Load OpenAI API key
+try:
+    with open("/etc/secrets/openai_api_key.txt", "r") as f:
+        openai.api_key = f.read().strip()
+except FileNotFoundError:
+    print("WARNING: OpenAI API key file not found.")
+    openai.api_key = os.getenv("OPENAI_API_KEY")
 
-openai.api_key = load_api_key()
-if not openai.api_key:
-    print("WARNING: OpenAI API key not found. Please set it via secret file or environment variable.")
-
-# Load or initialize persistent game memory
-memory_file = "game_memory.json"
-if os.path.exists(memory_file):
-    with open(memory_file, "r") as f:
+# Persistent memory
+if os.path.exists("game_memory.json"):
+    with open("game_memory.json", "r") as f:
         memory = json.load(f)
-    # Ensure essential keys exist
-    memory.setdefault("history", [])
     memory.setdefault("goals", ["make the game a better version of itself"])
+    memory.setdefault("history", [])
 else:
-    memory = {
-        "goals": ["make the game a better version of itself"],
-        "history": []
-    }
+    memory = {"goals": ["make the game a better version of itself"], "history": []}
 
 @app.route("/generate", methods=["POST"])
 def generate():
     try:
-        data = request.get_json(force=True, silent=True)
-        if data is None:
+        data = request.json
+        if not data:
             return jsonify({"error": "No JSON data received"}), 400
 
-        memory.setdefault("history", [])
-        memory.setdefault("goals", ["make the game a better version of itself"])
         memory["history"].append({"event": "generate_request", "data": data})
-
-        with open(memory_file, "w") as f:
+        with open("game_memory.json", "w") as f:
             json.dump(memory, f, indent=2)
 
         print("[INCOMING DATA]:", json.dumps(data, indent=2))
-
         response_data = generate_game_response(data)
         print("[RESPONSE DATA]:", response_data)
 
@@ -60,15 +47,12 @@ def generate():
 
 def generate_game_response(data):
     goals = memory.get("goals", ["make the game a better version of itself"])
-
-    prompt = (
-        f"Game Data: {json.dumps(data, indent=2)}\n"
-        f"Goals: {goals}\n"
-        "How can we improve the game structure or content? Provide specific changes "
-        "to the game logic, maps, or balance."
-    )
+    prompt = f"""
+Game Data: {json.dumps(data, indent=2)}
+Goals: {goals}
+How can we improve the game structure or content? Provide specific changes to the game logic, maps, or balance.
+"""
     print("[AI PROMPT]:", prompt)
-
     ai_output = call_ai_model(prompt)
 
     if "MODIFY_SELF" in ai_output:
@@ -89,9 +73,9 @@ def call_ai_model(prompt):
             raise Exception("OpenAI API key not set")
 
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # changed from gpt-4 to gpt-3.5-turbo
+            model="gpt-3.5-turbo",  # Use free model
             messages=[
-                {"role": "system", "content": "You are an AI managing a game."},
+                {"role": "system", "content": "You are an AI managing a Roblox game."},
                 {"role": "user", "content": prompt}
             ]
         )
@@ -102,14 +86,13 @@ def call_ai_model(prompt):
         print(traceback.format_exc())
         return "AI failed to respond properly"
 
-
 @app.route("/self_improve", methods=["POST"])
 def self_improve():
-    prompt = (
-        "Review the current state of main.py and suggest improvements to make the game smarter, "
-        "more efficient, or more fun. Always align changes to the main directive: "
-        "'Make the game a better version of itself.' Respond with specific Python code changes."
-    )
+    prompt = """
+Review the current state of main.py and suggest improvements to make the game smarter, more efficient, or more fun.
+Always align changes to the main directive: 'Make the game a better version of itself.'
+Respond with specific Python code changes.
+"""
     ai_response = call_ai_model(prompt)
     self_editor.modify_main(ai_response)
     return jsonify({"status": "improvement triggered", "details": ai_response})
