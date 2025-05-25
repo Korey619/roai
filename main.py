@@ -72,14 +72,22 @@ def call_ai_model(prompt):
         if not openai.api_key:
             raise Exception("OpenAI API key not set")
 
+        print("[DEBUG] Sending prompt to OpenAI...")
+        print(prompt)
+
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # Use free model
+            model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are an AI managing a Roblox game."},
+                {"role": "system", "content": "You are an AI managing a game."},
                 {"role": "user", "content": prompt}
             ]
         )
-        return response["choices"][0]["message"]["content"]
+
+        print("[DEBUG] OpenAI response raw:", response)
+
+        ai_message = response["choices"][0]["message"]["content"]
+        return ai_message
+
     except Exception as e:
         import traceback
         print("[AI ERROR]:", str(e))
