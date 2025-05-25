@@ -13,10 +13,10 @@ if os.path.exists("game_memory.json"):
 else:
     memory = {"goals": ["make the game a better version of itself"], "history": []}
 
-@app.route("/incoming_data", methods=["POST"])
-def receive_data():
+@app.route("/generate", methods=["POST"])
+def generate():
     data = request.json
-    memory["history"].append({"event": "incoming_data", "data": data})
+    memory["history"].append({"event": "generate_request", "data": data})
     return jsonify(generate_game_response(data))
 
 def generate_game_response(data):
