@@ -52,7 +52,9 @@ How can we improve the game structure or content? Provide specific changes to th
 
 def call_ai_model(prompt):
     try:
-        openai.api_key = os.getenv("OPENAI_API_KEY") or "sk-..."  # Replace with your key for now if needed
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+if not openai.api_key:
+    raise ValueError("Missing OpenAI API key. Set OPENAI_API_KEY in environment.")
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
