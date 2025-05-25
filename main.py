@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import json
 import os
 import self_editor
-import openai  # or any other LLM interface you use
+import openai  # Make sure it's installed and working
 
 app = Flask(__name__)
 
@@ -15,35 +15,55 @@ else:
 
 @app.route("/generate", methods=["POST"])
 def generate():
-    data = request.json
-    memory["history"].append({"event": "generate_request", "data": data})
-    return jsonify(generate_game_response(data))
+    try:
+        data = request.json
+        memory["history"].append({"event": "generate_request", "data": data})
+        print("[INCOMING DATA]:", json.dumps(data, indent=2))
+
+        response_data = generate_game_response(data)
+        print("[RESPONSE DATA]:", response_data)
+
+        return jsonify(response_data)
+    except Exception as e:
+        print("[ERROR in /generate]:", str(e))
+        return jsonify({"error": "Internal server error", "details": str(e)}), 500
 
 def generate_game_response(data):
-    # Example AI decision system
     prompt = f"""
 Game Data: {json.dumps(data, indent=2)}
 Goals: {memory['goals']}
 How can we improve the game structure or content? Provide specific changes to the game logic, maps, or balance.
 """
-    # Call the AI engine
+    print("[AI PROMPT]:", prompt)
+
     ai_output = call_ai_model(prompt)
 
-    # Optionally modify self (main.py) if instructed
     if "MODIFY_SELF" in ai_output:
+        print("[SELF-EDIT TRIGGERED]")
         self_editor.modify_main(ai_output)
 
-    return {"response": ai_output}
+    return {
+        "SpawnBoss": {
+            "Name": "DemonBoss",
+            "Position": {"X": 0, "Y": 10, "Z": 0}
+        },
+        "RawAIResponse": ai_output
+    }
 
 def call_ai_model(prompt):
-    # Replace with your LLM provider or API
-    # Example using OpenAI:
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "system", "content": "You are an AI managing a game."},
-                  {"role": "user", "content": prompt}]
-    )
-    return response["choices"][0]["message"]["content"]
+    try:
+        openai.api_key = os.getenv("OPENAI_API_KEY") or "sk-..."  # Replace with your key for now if needed
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are an AI managing a game."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response["choices"][0]["message"]["content"]
+    except Exception as e:
+        print("[AI ERROR]:", str(e))
+        return "AI failed to respond properly"
 
 @app.route("/self_improve", methods=["POST"])
 def self_improve():
