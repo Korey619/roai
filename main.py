@@ -89,12 +89,13 @@ def call_ai_model(prompt):
             raise Exception("OpenAI API key not set")
 
         response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are an AI managing a game."},
-                {"role": "user", "content": prompt}
-            ]
-        )
+    model="gpt-3.5-turbo",  # Use this if unsure about GPT-4 access
+    messages=[
+        {"role": "system", "content": "You are an AI managing a game."},
+        {"role": "user", "content": prompt}
+    ]
+)
+
         return response.choices[0].message.content
     except Exception as e:
         import traceback
