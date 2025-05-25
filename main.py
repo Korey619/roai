@@ -21,6 +21,12 @@ else:
 @app.route("/generate", methods=["POST"])
 def generate():
     try:
+        # Make sure memory has 'goals' and 'history' keys before proceeding
+        if "goals" not in memory:
+            memory["goals"] = ["make the game a better version of itself"]
+        if "history" not in memory:
+            memory["history"] = []
+
         data = request.json
         if data is None:
             return jsonify({"error": "No JSON data received"}), 400
