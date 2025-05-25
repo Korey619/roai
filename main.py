@@ -10,9 +10,11 @@ app = Flask(__name__)
 if os.path.exists("game_memory.json"):
     with open("game_memory.json", "r") as f:
         memory = json.load(f)
-    # Ensure "history" key exists
+    # Ensure keys exist
     if "history" not in memory:
         memory["history"] = []
+    if "goals" not in memory:
+        memory["goals"] = ["make the game a better version of itself"]
 else:
     memory = {"goals": ["make the game a better version of itself"], "history": []}
 
