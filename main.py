@@ -10,6 +10,9 @@ app = Flask(__name__)
 if os.path.exists("game_memory.json"):
     with open("game_memory.json", "r") as f:
         memory = json.load(f)
+    # Ensure "history" key exists
+    if "history" not in memory:
+        memory["history"] = []
 else:
     memory = {"goals": ["make the game a better version of itself"], "history": []}
 
@@ -21,6 +24,11 @@ def generate():
             return jsonify({"error": "No JSON data received"}), 400
 
         memory["history"].append({"event": "generate_request", "data": data})
+        
+        # Save memory back to file
+        with open("game_memory.json", "w") as f:
+            json.dump(memory, f, indent=2)
+
         print("[INCOMING DATA]:", json.dumps(data, indent=2))
 
         response_data = generate_game_response(data)
