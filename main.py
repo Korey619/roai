@@ -58,8 +58,9 @@ How can we improve the game structure or content? Provide specific changes to th
 def call_ai_model(prompt):
     try:
         openai.api_key = os.getenv("OPENAI_API_KEY")
-if not openai.api_key:
-    raise ValueError("Missing OpenAI API key. Set OPENAI_API_KEY in environment.")
+        if not openai.api_key:
+            raise Exception("OPENAI_API_KEY not set")
+
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
@@ -69,7 +70,9 @@ if not openai.api_key:
         )
         return response["choices"][0]["message"]["content"]
     except Exception as e:
+        import traceback
         print("[AI ERROR]:", str(e))
+        print(traceback.format_exc())
         return "AI failed to respond properly"
 
 @app.route("/self_improve", methods=["POST"])
