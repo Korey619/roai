@@ -17,6 +17,9 @@ else:
 def generate():
     try:
         data = request.json
+        if data is None:
+            return jsonify({"error": "No JSON data received"}), 400
+
         memory["history"].append({"event": "generate_request", "data": data})
         print("[INCOMING DATA]:", json.dumps(data, indent=2))
 
@@ -25,7 +28,9 @@ def generate():
 
         return jsonify(response_data)
     except Exception as e:
+        import traceback
         print("[ERROR in /generate]:", str(e))
+        print(traceback.format_exc())
         return jsonify({"error": "Internal server error", "details": str(e)}), 500
 
 def generate_game_response(data):
